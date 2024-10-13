@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSA Search Engine</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Basic Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Body Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        /* Header Styling */
+        header {
+            background-color: #4CAF50;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 2em;
+        }
+
+        /* Section Styling */
+        section {
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Input and Button Styling */
+        #query {
+            width: 70%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Results Styling */
+        h2 {
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        #results {
+            list-style-type: none;
+        }
+
+        #results li {
+            background-color: white;
+            padding: 5px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 1.1em; /* Increased text size */
+        }
+
+        #results li h3 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        #results li p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        #results li .similarity {
+            font-weight: bold;
+        }
+
+        /* Chart Styling */
+        #similarityChart {
+            margin-top: 30px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            #query {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            button {
+                width: 100%;
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Latent Semantic Analysis (LSA) Search Engine</h1>
+</header>
+
+<section>
+    <input type="text" id="query" placeholder="Enter your query">
+    <button onclick="search()">Search</button>
+    <h2>Top 5 Documents:</h2>
+    <ul id="results"></ul>
+    <canvas id="similarityChart" width="400" height="200"></canvas>
+</section>
+<script>
+    function search() {
+        const query = document.getElementById('query').value;
+        fetch('/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const resultList = document.getElementById('results');
+            resultList.innerHTML = '';
+            data.forEach((doc, index) => {
+                let li = document.createElement('li');
+
+                // Document Number
+                let docNumber = document.createElement('h3');
+                docNumber.textContent = `Document`;
+                li.appendChild(docNumber);
+
+                // Document Text
+                let docText = document.createElement('p');
+                docText.textContent = doc.document.substring(0, 50000) + '...';
+                li.appendChild(docText);
+
+                // Similarity Score
+                let similarity = document.createElement('p');
+                similarity.classList.add('similarity');
+                similarity.textContent = `Similarity: ${doc.similarity.toFixed(3)}`;
+                li.appendChild(similarity);
+
+                resultList.appendChild(li);
+            });
+            drawChart(data);
+        });
+    }
+
+    function drawChart(data) {
+        const ctx = document.getElementById('similarityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(doc => `Doc ${doc.doc_id}`),
+                datasets: [{
+                    label: 'Cosine Similarity',
+                    data: data.map(doc => doc.similarity),
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
